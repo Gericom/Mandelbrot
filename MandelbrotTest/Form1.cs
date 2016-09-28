@@ -6,6 +6,7 @@ using System.Drawing;
 using System.Drawing.Imaging;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
@@ -13,21 +14,38 @@ namespace MandelbrotTest
 {
     public partial class Form1 : Form
     {
+        MandelbrotGenerator mMandelbrotGenerator = new MandelbrotGenerator();
+        Bitmap mMandelbrotBitmap = null;
+
         public Form1()
         {
             InitializeComponent();
+            mMandelbrotGenerator.Width = Width;
+            mMandelbrotGenerator.Height = Height;
+            mMandelbrotGenerator.FixAspect();
+            mMandelbrotGenerator.MandlebrotReady += MMandelbrotGenerator_MandlebrotReady;
+            UpdateMandelbrot();
         }
 
-        MandelbrotGenerator mMandelbrotGenerator = new MandelbrotGenerator();
-
-        private unsafe void Form1_Paint(object sender, PaintEventArgs e)
+        private void MMandelbrotGenerator_MandlebrotReady(Bitmap mandelbrot, bool is4Times)
         {
-            mMandelbrotGenerator.Width = Width;// * 4;
-            mMandelbrotGenerator.Height = Height;// * 4;
-            mMandelbrotGenerator.FixAspect();
-           // e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
+            mMandelbrotBitmap = mandelbrot;
+            Invalidate();
+            if(!is4Times)
+                mMandelbrotGenerator.StartGenerateMandelbrot(true);
+        }
+
+        private void UpdateMandelbrot()
+        {
+            mMandelbrotGenerator.StartGenerateMandelbrot();
+        }
+
+        private void Form1_Paint(object sender, PaintEventArgs e)
+        {
+            //e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
             //e.Graphics.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.Bilinear;
-            e.Graphics.DrawImage(mMandelbrotGenerator.GenerateMandelbrot(), 0, 0, Width, Height);
+            if(mMandelbrotBitmap != null)
+                e.Graphics.DrawImage(mMandelbrotBitmap, 0, 0, Width, Height);
         }
 
         Point mMouseDownPoint;
@@ -45,13 +63,18 @@ namespace MandelbrotTest
             {
                 mIsMouseDown = false;
                 mMandelbrotGenerator.Crop(mMouseDownPoint.X, mMouseDownPoint.Y, e.X, e.Y);
-                Invalidate();
+                UpdateMandelbrot();
+                //Invalidate();
             }
         }
 
         private void Form1_SizeChanged(object sender, EventArgs e)
         {
-            Invalidate();
+            mMandelbrotGenerator.Width = Width;
+            mMandelbrotGenerator.Height = Height;
+            mMandelbrotGenerator.FixAspect();
+            UpdateMandelbrot();
+            //Invalidate();
         }
     }
 }
