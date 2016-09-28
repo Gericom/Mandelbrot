@@ -37,7 +37,7 @@ namespace MandelbrotTest
             ynew = y * MandlebrotHeight / (Height * multiplier) + MandlebrotY;
         }
 
-        public delegate void OnMandlebrotReadyEventHandler(Bitmap mandelbrot, bool is4Times);
+        public delegate void OnMandlebrotReadyEventHandler(Bitmap mandelbrot, bool is2Times);
 
         public event OnMandlebrotReadyEventHandler MandlebrotReady;
 
@@ -45,7 +45,7 @@ namespace MandelbrotTest
         private bool mCancelMandelbrot = false;
         private bool mIsGeneratingMandlebrot = false;
 
-        public unsafe void StartGenerateMandelbrot(bool generate4Times = false)
+        public unsafe void StartGenerateMandelbrot(bool generate2Times = false)
         {
             if (mIsGeneratingMandlebrot)
             {
@@ -58,7 +58,7 @@ namespace MandelbrotTest
             mIsGeneratingMandlebrot = true;
             //mCancelMandelbrotSource = new CancellationTokenSource();
             //use a bitmap and pointers to it's data for much faster drawing
-            int multiplier = generate4Times ? 2 : 1;
+            int multiplier = generate2Times ? 2 : 1;
             Bitmap bitmap = new Bitmap(Width * multiplier, Height * multiplier);
             BitmapData bitmapData = bitmap.LockBits(new Rectangle(0, 0, Width * multiplier, Height * multiplier), ImageLockMode.WriteOnly, PixelFormat.Format32bppPArgb);
             uint* pBitmap = (uint*)bitmapData.Scan0;
@@ -90,7 +90,7 @@ namespace MandelbrotTest
                 {
                     mIsGeneratingMandlebrot = false;
                     if (MandlebrotReady != null)
-                        MandlebrotReady.Invoke(bitmap, generate4Times);
+                        MandlebrotReady.Invoke(bitmap, generate2Times);
                 }
                 else
                     mIsGeneratingMandlebrot = false;
@@ -126,16 +126,21 @@ namespace MandelbrotTest
         {
             if (Width < Height)
             {
-                MandlebrotHeight = MandlebrotWidth * Height / Width;
+                double newheight = MandlebrotWidth * Height / Width;
+                MandlebrotY += (MandlebrotHeight - newheight) / 2.0;
+                MandlebrotHeight = newheight;
             }
             else
             {
-                 MandlebrotWidth = MandlebrotHeight * Width / Height;
+                double newwidth = MandlebrotHeight * Width / Height;
+                MandlebrotX += (MandlebrotWidth - newwidth) / 2.0;
+                MandlebrotWidth = newwidth;
             }
         }
 
         private unsafe void MandelbrotThread(object arg)
         {
+            Thread.CurrentThread.Priority = ThreadPriority.Lowest;
             MandelbrotContext c = (MandelbrotContext)arg;
             uint* pBitmap = c.bitmapPtr;
             double xStep = MandlebrotWidth / (Width * c.multiplier);
