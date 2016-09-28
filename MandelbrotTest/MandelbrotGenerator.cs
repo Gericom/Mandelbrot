@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using System.ComponentModel;
 
 namespace MandelbrotTest
 {
@@ -20,7 +21,9 @@ namespace MandelbrotTest
             public int multiplier;
         }
 
+        [Browsable(false)]
         public int Width { get; set; }
+        [Browsable(false)]
         public int Height { get; set; }
 
         public double MandlebrotX { get; set; } = -2;
@@ -69,10 +72,10 @@ namespace MandelbrotTest
                 MandelbrotContext c = new MandelbrotContext();
                 c.bitmapPtr = pBitmap;
                 c.startLine = y;
-                //if (i == nrthreads - 1)
-                //    c.nrLines = (Height * multiplier) - y - 1;
-                //else
-                c.nrLines = nrlinesperthread;
+                if (i == nrthreads - 1)
+                    c.nrLines = (Height * multiplier) - y;
+                else
+                    c.nrLines = nrlinesperthread;
                 c.stride = bitmapData.Stride;
                 c.multiplier = multiplier;
                 y += nrlinesperthread;
