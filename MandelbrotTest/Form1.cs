@@ -15,7 +15,7 @@ namespace MandelbrotTest
 {
     public partial class Form1 : Form
     {
-        MandelbrotGenerator mMandelbrotGenerator = new MandelbrotGenerator();
+        MandelbrotGenerator mMandelbrotGenerator;
         Bitmap mMandelbrotBitmap = null;
         bool mMandelbrotBitmapX2 = false;
 
@@ -24,6 +24,7 @@ namespace MandelbrotTest
         public Form1()
         {
             InitializeComponent();
+            mMandelbrotGenerator = new MandelbrotGenerator(Width, Height);
             //Set the protected DoubleBuffered property of the panel to true, by using reflection
             panel1.GetType()
                 .GetProperty("DoubleBuffered", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
@@ -40,7 +41,7 @@ namespace MandelbrotTest
         private void Form1_MouseWheel(object sender, MouseEventArgs e)
         {
             int RealDelta = e.Delta / SystemInformation.MouseWheelScrollDelta;
-            if(RealDelta < 0) //uitzoomen 
+            if (RealDelta < 0) //uitzoomen 
             {
                 RealDelta = -RealDelta;
                 int scale = (int)Math.Pow(2, RealDelta);
@@ -48,10 +49,10 @@ namespace MandelbrotTest
                 int newHeight = panel1.Height * scale;
                 //bereken x1, y1
                 AnimateZoom(
-                        e.X - newWidth / 2,
-                        e.Y - newHeight / 2,
-                        e.X + newWidth / 2,
-                        e.Y + newHeight / 2
+                        e.X - newWidth / 2 - (e.X - panel1.Width / 2) * scale,
+                        e.Y - newHeight / 2 - (e.Y - panel1.Height / 2) * scale,
+                        e.X + newWidth / 2 - (e.X - panel1.Width / 2) * scale,
+                        e.Y + newHeight / 2 - (e.Y - panel1.Height / 2) * scale
                     );
             }
             else    // inzoomen
@@ -61,11 +62,11 @@ namespace MandelbrotTest
                 int newHeight = panel1.Height / scale;
                 //bereken x1, y1
                 AnimateZoom(
-                        e.X - newWidth / 2,
-                        e.Y - newHeight / 2,
-                        e.X + newWidth / 2,
-                        e.Y + newHeight / 2
-                    );               
+                        e.X - newWidth / 2 - (e.X - panel1.Width / 2) / scale,
+                        e.Y - newHeight / 2 - (e.Y - panel1.Height / 2) / scale,
+                        e.X + newWidth / 2 - (e.X - panel1.Width / 2) / scale,
+                        e.Y + newHeight / 2 - (e.Y - panel1.Height / 2) / scale
+                    );
             }
         }
 
@@ -77,7 +78,7 @@ namespace MandelbrotTest
             mMandelbrotBitmap = mandelbrot;
             panel1.Invalidate();
             if (!is2Times)
-                mMandelbrotGenerator.StartGenerateMandelbrot(true);      
+                mMandelbrotGenerator.StartGenerateMandelbrot(true);
         }
 
         private void UpdateMandelbrot()
@@ -87,6 +88,7 @@ namespace MandelbrotTest
         }
 
         Point mMouseDownPoint;
+        Point mCurMousePoint;
         bool mIsMouseDown = false;
 
         private void panel1_Paint(object sender, PaintEventArgs e)
@@ -108,6 +110,10 @@ namespace MandelbrotTest
                 else
                     e.Graphics.DrawImage(mMandelbrotBitmap, 0, 0, panel1.Width, panel1.Height);
             }
+            if (mIsMouseDown)
+            {
+                e.Graphics.DrawRectangle(Pens.White, mMouseDownPoint.X, mMouseDownPoint.Y, mCurMousePoint.X - mMouseDownPoint.X, mCurMousePoint.Y - mMouseDownPoint.Y);
+            }
         }
 
         private void panel1_SizeChanged(object sender, EventArgs e)
@@ -122,12 +128,15 @@ namespace MandelbrotTest
         {
             mIsMouseDown = true;
             mMouseDownPoint = e.Location;
+            mCurMousePoint = e.Location;
         }
 
         private void AnimateZoom(int x1, int y1, int x2, int y2)
         {
+            if (x1 == x2 || y1 == y2)
+                return;
             mMandelbrotGenerator.Crop(x1, y1, x2, y2);
-          if (x1 > x2)
+            if (x1 > x2)
             {
                 int tmp = x2;
                 x2 = x1;
@@ -147,7 +156,7 @@ namespace MandelbrotTest
             new Thread(AnimThread) { Priority = ThreadPriority.Highest }.Start();
             UpdateMandelbrot();
         }
-        
+
 
         private void panel1_MouseUp(object sender, MouseEventArgs e)
         {
@@ -155,7 +164,6 @@ namespace MandelbrotTest
             {
                 mIsMouseDown = false;
                 AnimateZoom(mMouseDownPoint.X, mMouseDownPoint.Y, e.X, e.Y);
-
             }
         }
 
@@ -170,7 +178,7 @@ namespace MandelbrotTest
                 panel1.Invalidate();
                 if (mMandlebrotZoomer != null && !mMandlebrotZoomer.IsFinished)
                 {
-                    while (s.ElapsedMilliseconds < 60);
+                    while (s.ElapsedMilliseconds < 60) ;
                 }
             }
         }
@@ -178,6 +186,20 @@ namespace MandelbrotTest
         private void propertyGrid1_PropertyValueChanged(object s, PropertyValueChangedEventArgs e)
         {
             UpdateMandelbrot();
+        }
+
+        private void panel1_MouseMove(object sender, MouseEventArgs e)
+        {
+            if (mIsMouseDown)
+            {
+                mCurMousePoint = e.Location;
+                panel1.Invalidate();
+            }
+        }
+
+        private void exportToolStripButton_Click(object sender, EventArgs e)
+        {
+            new MandelExporterForm(mMandelbrotGenerator).ShowDialog();
         }
     }
 }

@@ -31,6 +31,22 @@ namespace MandelbrotTest
         public double MandlebrotWidth { get; set; } = 4;
         public double MandlebrotHeight { get; set; } = 4;
 
+        public MandelbrotGenerator(int width, int height)
+        {
+            Width = width;
+            Height = height;
+        }
+
+        public MandelbrotGenerator(MandelbrotGenerator template, int width, int height)
+        {
+            MandlebrotX = template.MandlebrotX;
+            MandlebrotY = template.MandlebrotY;
+            MandlebrotWidth = template.MandlebrotWidth;
+            MandlebrotHeight = template.MandlebrotHeight;
+            Width = width;
+            Height = height;
+        }
+
         private void WindowCoordsToMandlebrot(int x, int y, int multiplier, out double xnew, out double ynew)
         {
             xnew = x * MandlebrotWidth / (Width * multiplier) + MandlebrotX;
