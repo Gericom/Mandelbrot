@@ -24,6 +24,8 @@ namespace MandelbrotTest
 
         MandelbrotPresets mPresets = new MandelbrotPresets();
 
+        bool mWaitingForBrot = false;
+
         public Form1()
         {
             InitializeComponent();
@@ -81,7 +83,7 @@ namespace MandelbrotTest
 
         private void Form1_MouseWheel(object sender, MouseEventArgs e)
         {
-            if (mMandlebrotZoomer != null && !mMandlebrotZoomer.IsFinished)
+            if ((mMandlebrotZoomer != null && !mMandlebrotZoomer.IsFinished) || mWaitingForBrot)
                 return;
             int RealDelta = e.Delta / SystemInformation.MouseWheelScrollDelta;
             Point panel1lt = panel1.PointToClient(PointToScreen(e.Location));
@@ -120,6 +122,7 @@ namespace MandelbrotTest
         {
             while (mMandlebrotZoomer != null && !mMandlebrotZoomer.IsFinished) ;
             mMandlebrotZoomer = null;
+            mWaitingForBrot = false;
             mMandelbrotBitmapX2 = is2Times;
             mMandelbrotBitmap = mandelbrot;
             panel1.Invalidate();
@@ -130,6 +133,7 @@ namespace MandelbrotTest
         private void UpdateMandelbrot()
         {
             propertyGrid1.SelectedObject = mMandelbrotGenerator;
+            mWaitingForBrot = true;
             mMandelbrotGenerator.StartGenerateMandelbrot();
         }
 
