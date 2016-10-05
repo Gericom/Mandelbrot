@@ -10,6 +10,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using System.IO;
 
 namespace MandelbrotTest
 {
@@ -21,26 +22,71 @@ namespace MandelbrotTest
 
         RectangleAnimator mMandlebrotZoomer = null;
 
+        MandelbrotPresets mPresets = new MandelbrotPresets();
+
         public Form1()
         {
             InitializeComponent();
             mMandelbrotGenerator = new MandelbrotGenerator(Width, Height);
-            //Set the protected DoubleBuffered property of the panel to true, by using reflection
-            panel1.GetType()
-                .GetProperty("DoubleBuffered", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
-                .SetValue(panel1, true);
             mMandelbrotGenerator.Width = panel1.Width;
             mMandelbrotGenerator.Height = panel1.Height;
             mMandelbrotGenerator.FixAspect();
             mMandelbrotGenerator.MandlebrotReady += MMandelbrotGenerator_MandlebrotReady;
+            mMandelbrotGenerator.MandlebrotPaletteChanged += MMandelbrotGenerator_MandlebrotPaletteChanged;
             MouseWheel += Form1_MouseWheel;
             UpdateMandelbrot();
             propertyGrid1.SelectedObject = mMandelbrotGenerator;
+            string xmlpath = Path.GetDirectoryName(Application.ExecutablePath) + "\\presets.xml";
+            if (File.Exists(xmlpath))
+            {
+                //try loading
+                try
+                {
+                    mPresets = MandelbrotPresets.FromXml(File.ReadAllText(xmlpath));
+                }
+                catch
+                {
+                    mPresets = MandelbrotPresets.GenerateDefault();
+                    SavePresets();
+                }
+            }
+            else
+            {
+                mPresets = MandelbrotPresets.GenerateDefault();
+                SavePresets();
+            }
+            UpdatePresets();
+        }
+
+        private void UpdatePresets()
+        {
+            listBox1.BeginUpdate();
+            listBox1.Items.Clear();
+            foreach (MandelbrotPresets.MandelbrotPreset p in mPresets.presets)
+                listBox1.Items.Add(p.name);
+            listBox1.EndUpdate();
+        }
+
+        private void SavePresets()
+        {
+            string xmlpath = Path.GetDirectoryName(Application.ExecutablePath) + "\\presets.xml";
+            File.WriteAllText(xmlpath, mPresets.ToXml());
+        }
+
+        bool mMandelbrotPaletteChanged = false;
+        private void MMandelbrotGenerator_MandlebrotPaletteChanged()
+        {
+            mMandelbrotPaletteChanged = true;
         }
 
         private void Form1_MouseWheel(object sender, MouseEventArgs e)
         {
+            if (mMandlebrotZoomer != null && !mMandlebrotZoomer.IsFinished)
+                return;
             int RealDelta = e.Delta / SystemInformation.MouseWheelScrollDelta;
+            Point panel1lt = panel1.PointToClient(PointToScreen(e.Location));
+            int realx = panel1lt.X;
+            int realy = panel1lt.Y;
             if (RealDelta < 0) //uitzoomen 
             {
                 RealDelta = -RealDelta;
@@ -49,10 +95,10 @@ namespace MandelbrotTest
                 int newHeight = panel1.Height * scale;
                 //bereken x1, y1
                 AnimateZoom(
-                        e.X - newWidth / 2 - (e.X - panel1.Width / 2) * scale,
-                        e.Y - newHeight / 2 - (e.Y - panel1.Height / 2) * scale,
-                        e.X + newWidth / 2 - (e.X - panel1.Width / 2) * scale,
-                        e.Y + newHeight / 2 - (e.Y - panel1.Height / 2) * scale
+                        realx - newWidth / 2 - (realx - panel1.Width / 2) * scale,
+                        realy - newHeight / 2 - (realy - panel1.Height / 2) * scale,
+                        realx + newWidth / 2 - (realx - panel1.Width / 2) * scale,
+                        realy + newHeight / 2 - (realy - panel1.Height / 2) * scale
                     );
             }
             else    // inzoomen
@@ -62,10 +108,10 @@ namespace MandelbrotTest
                 int newHeight = panel1.Height / scale;
                 //bereken x1, y1
                 AnimateZoom(
-                        e.X - newWidth / 2 - (e.X - panel1.Width / 2) / scale,
-                        e.Y - newHeight / 2 - (e.Y - panel1.Height / 2) / scale,
-                        e.X + newWidth / 2 - (e.X - panel1.Width / 2) / scale,
-                        e.Y + newHeight / 2 - (e.Y - panel1.Height / 2) / scale
+                        realx - newWidth / 2 - (realx - panel1.Width / 2) / scale,
+                        realy - newHeight / 2 - (realy - panel1.Height / 2) / scale,
+                        realx + newWidth / 2 - (realx - panel1.Width / 2) / scale,
+                        realy + newHeight / 2 - (realy - panel1.Height / 2) / scale
                     );
             }
         }
@@ -200,6 +246,70 @@ namespace MandelbrotTest
         private void exportToolStripButton_Click(object sender, EventArgs e)
         {
             new MandelExporterForm(mMandelbrotGenerator).ShowDialog();
+        }
+
+        private void propertyGrid1_SelectedGridItemChanged(object sender, SelectedGridItemChangedEventArgs e)
+        {
+            if (mMandelbrotPaletteChanged)
+            {
+                mMandelbrotPaletteChanged = false;
+                UpdateMandelbrot();
+            }
+        }
+
+        private void listBox1_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if (listBox1.SelectedIndices.Count == 0)
+            {
+                toolStripButton2.Enabled = false;
+                return;
+            }
+            toolStripButton2.Enabled = true;
+            mPresets.presets[listBox1.SelectedIndex].ApplyToGenerator(mMandelbrotGenerator);
+            UpdateMandelbrot();
+        }
+
+        private void toolStripButton3_Click(object sender, EventArgs e)
+        {
+            if (MessageBox.Show("Are you sure you want to result the presets to the defaults?", "Reset", MessageBoxButtons.YesNo) == DialogResult.Yes)
+            {
+                mPresets = MandelbrotPresets.GenerateDefault();
+                SavePresets();
+                UpdatePresets();
+            }
+        }
+
+        private void toolStripButton1_Click(object sender, EventArgs e)
+        {
+            string name = Microsoft.VisualBasic.Interaction.InputBox("Enter a name for the new preset:", "New Preset", null);
+            if (name == null || name.Trim().Length == 0) return;
+            name = name.Trim();
+            foreach (var p in mPresets.presets)
+            {
+                if (p.name.Trim().ToLower() == name.ToLower())
+                {
+                    MessageBox.Show("This name is already in use!");
+                    return;
+                }
+            }
+            mPresets.presets.Add(new MandelbrotPresets.MandelbrotPreset(mMandelbrotGenerator, name));
+            SavePresets();
+            UpdatePresets();
+        }
+
+        private void toolStripButton2_Click(object sender, EventArgs e)
+        {
+            if (listBox1.SelectedIndices.Count == 0)
+            {
+                toolStripButton2.Enabled = false;
+                return;
+            }
+            if (MessageBox.Show("Are you sure you want to remove this preset?", "Remove", MessageBoxButtons.YesNo) == DialogResult.Yes)
+            {
+                mPresets.presets.RemoveAt(listBox1.SelectedIndex);
+                SavePresets();
+                UpdatePresets();
+            }
         }
     }
 }

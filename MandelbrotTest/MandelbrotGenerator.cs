@@ -7,11 +7,21 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.ComponentModel;
+using System.ComponentModel.Design;
+using System.Windows.Forms;
+using System.Drawing.Design;
+using System.Collections.ObjectModel;
 
 namespace MandelbrotTest
 {
     public class MandelbrotGenerator
     {
+        public enum MandelbrotColorStyle
+        {
+            SimpleRgb,
+            Paletted
+        }
+
         private unsafe struct MandelbrotContext
         {
             public uint* bitmapPtr;
@@ -21,43 +31,158 @@ namespace MandelbrotTest
             public int multiplier;
         }
 
+        public delegate void OnMandlebrotPaletteChangedEventHandler();
+
+        public event OnMandlebrotPaletteChangedEventHandler MandlebrotPaletteChanged;
+
+        [DisplayName("Center X")]
+        [Description("The center X coordinate of the mandelbrot figure.")]
+        public double CenterX
+        {
+            get
+            {
+                return MandelbrotX + MandelbrotWidth / 2.0;
+            }
+            set
+            {
+                MandelbrotX = value - MandelbrotWidth / 2.0;
+            }
+        }
+
+        [DisplayName("Center Y")]
+        [Description("The center Y coordinate of the mandelbrot figure.")]
+        public double CenterY
+        {
+            get
+            {
+                return MandelbrotY + MandelbrotHeight / 2.0;
+            }
+            set
+            {
+                MandelbrotY = value - MandelbrotHeight / 2.0;
+            }
+        }
+
+        /*public double Scale
+        {
+            get
+            {
+                return 0;
+            }
+            set
+            {
+                MandelbrotX = CenterX - 400.0 * value / 2.0;
+                MandelbrotY = CenterY - 400.0 * value / 2.0;
+                MandelbrotWidth = MandelbrotHeight = 400.0 * value;
+            }
+        }*/
+
+
         [Browsable(false)]
         public int Width { get; set; }
         [Browsable(false)]
         public int Height { get; set; }
 
-        public double MandlebrotX { get; set; } = -2;
-        public double MandlebrotY { get; set; } = -2;
-        public double MandlebrotWidth { get; set; } = 4;
-        public double MandlebrotHeight { get; set; } = 4;
+        [Browsable(false)]
+        public double MandelbrotX { get; set; } = -2;
+        [Browsable(false)]
+        public double MandelbrotY { get; set; } = -2;
+        [DisplayName("Width")]
+        [Description("The width of the figure in mandelbrot coordinates.")]
+        public double MandelbrotWidth { get; set; } = 4;
+        [DisplayName("Height")]
+        [Description("The height of the figure in mandelbrot coordinates.")]
+        public double MandelbrotHeight { get; set; } = 4;
+
+        private int mMandlebrotMaxCount = 128;
+        [DisplayName("Max Count")]
+        [Description("The maximum number of iterations done.")]
+        public int MandlebrotMaxCount
+        {
+            get
+            {
+                if (MandelbrotStyle == MandelbrotColorStyle.SimpleRgb)
+                    return 512;
+                else
+                    return mMandlebrotMaxCount;
+            }
+            set
+            {
+                if (MandelbrotStyle == MandelbrotColorStyle.SimpleRgb && value != 512)
+                    throw new Exception("This value is fixed to 512 in SimpleRgb mode!");
+                mMandlebrotMaxCount = value;
+            }
+        }
+
+        [DisplayName("Style")]
+        [Description("The way the mandlebrot figure is colored.")]
+        [Category("Coloring")]
+        public MandelbrotColorStyle MandelbrotStyle { get; set; } = MandelbrotColorStyle.SimpleRgb;
+
+        [DisplayName("Palette")]
+        [Description("The palette for the paletted mandelbrot style.")]
+        [Category("Coloring")]
+        public ObservableCollection<Color> MandelbrotPalette { get; } = new ObservableCollection<Color>();
+
+        public bool mIsUpdatingPalette = false;
 
         public MandelbrotGenerator(int width, int height)
         {
             Width = width;
             Height = height;
+            MandelbrotPalette.Add(Color.DarkBlue);
+            MandelbrotPalette.Add(Color.White);
+            MandelbrotPalette.Add(Color.Orange);
+            MandelbrotPalette.Add(Color.White);
+            MandelbrotPalette.Add(Color.Black);
+            MandelbrotPalette.CollectionChanged += MandelbrotPalette_CollectionChanged;
+        }
+
+        public void BeginUpdatePalette()
+        {
+            mIsUpdatingPalette = true;
+        }
+
+        public void EndUpdatePalette()
+        {
+            mIsUpdatingPalette = false;
+        }
+
+        private void MandelbrotPalette_CollectionChanged(object sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
+        {
+            if (!mIsUpdatingPalette && e.Action == System.Collections.Specialized.NotifyCollectionChangedAction.Add)
+            {
+                if (MandlebrotPaletteChanged != null)
+                    MandlebrotPaletteChanged.Invoke();
+            }
         }
 
         public MandelbrotGenerator(MandelbrotGenerator template, int width, int height)
+            : this(width, height)
         {
-            MandlebrotX = template.MandlebrotX;
-            MandlebrotY = template.MandlebrotY;
-            MandlebrotWidth = template.MandlebrotWidth;
-            MandlebrotHeight = template.MandlebrotHeight;
-            Width = width;
-            Height = height;
+            MandelbrotX = template.MandelbrotX;
+            MandelbrotY = template.MandelbrotY;
+            MandelbrotWidth = template.MandelbrotWidth;
+            MandelbrotHeight = template.MandelbrotHeight;
+            MandelbrotStyle = template.MandelbrotStyle;
+            mMandlebrotMaxCount = template.mMandlebrotMaxCount;
+            BeginUpdatePalette();
+            MandelbrotPalette.Clear();
+            foreach (Color c in template.MandelbrotPalette)
+                MandelbrotPalette.Add(c);
+            EndUpdatePalette();
         }
 
         private void WindowCoordsToMandlebrot(int x, int y, int multiplier, out double xnew, out double ynew)
         {
-            xnew = x * MandlebrotWidth / (Width * multiplier) + MandlebrotX;
-            ynew = y * MandlebrotHeight / (Height * multiplier) + MandlebrotY;
+            xnew = x * MandelbrotWidth / (Width * multiplier) + MandelbrotX;
+            ynew = y * MandelbrotHeight / (Height * multiplier) + MandelbrotY;
         }
 
         public delegate void OnMandlebrotReadyEventHandler(Bitmap mandelbrot, bool is2Times);
 
         public event OnMandlebrotReadyEventHandler MandlebrotReady;
 
-        //private CancellationTokenSource mCancelMandelbrotSource;
         private bool mCancelMandelbrot = false;
         private bool mIsGeneratingMandlebrot = false;
 
@@ -65,13 +190,23 @@ namespace MandelbrotTest
         {
             if (mIsGeneratingMandlebrot)
             {
-                //mCancelMandelbrotSource.Cancel();
                 mCancelMandelbrot = true;
                 while (mIsGeneratingMandlebrot)
                     Thread.Sleep(1);
             }
             mCancelMandelbrot = false;
             mIsGeneratingMandlebrot = true;
+            if (MandelbrotStyle == MandelbrotColorStyle.Paletted && MandelbrotPalette.Count < 2)
+            {
+                BeginUpdatePalette();
+                MandelbrotPalette.Clear();
+                MandelbrotPalette.Add(Color.DarkBlue);
+                MandelbrotPalette.Add(Color.White);
+                MandelbrotPalette.Add(Color.Orange);
+                MandelbrotPalette.Add(Color.White);
+                MandelbrotPalette.Add(Color.Black);
+                EndUpdatePalette();
+            }
             //mCancelMandelbrotSource = new CancellationTokenSource();
             //use a bitmap and pointers to it's data for much faster drawing
             int multiplier = generate2Times ? 2 : 1;
@@ -131,10 +266,10 @@ namespace MandelbrotTest
                 yreal_end = yreal_start;
                 yreal_start = tmp;
             }
-            MandlebrotX = xreal_start;
-            MandlebrotY = yreal_start;
-            MandlebrotWidth = xreal_end - xreal_start;
-            MandlebrotHeight = yreal_end - yreal_start;
+            MandelbrotX = xreal_start;
+            MandelbrotY = yreal_start;
+            MandelbrotWidth = xreal_end - xreal_start;
+            MandelbrotHeight = yreal_end - yreal_start;
             FixAspect();
         }
 
@@ -142,15 +277,15 @@ namespace MandelbrotTest
         {
             if (Width < Height)
             {
-                double newheight = MandlebrotWidth * Height / Width;
-                MandlebrotY += (MandlebrotHeight - newheight) / 2.0;
-                MandlebrotHeight = newheight;
+                double newheight = MandelbrotWidth * Height / Width;
+                MandelbrotY += (MandelbrotHeight - newheight) / 2.0;
+                MandelbrotHeight = newheight;
             }
             else
             {
-                double newwidth = MandlebrotHeight * Width / Height;
-                MandlebrotX += (MandlebrotWidth - newwidth) / 2.0;
-                MandlebrotWidth = newwidth;
+                double newwidth = MandelbrotHeight * Width / Height;
+                MandelbrotX += (MandelbrotWidth - newwidth) / 2.0;
+                MandelbrotWidth = newwidth;
             }
         }
 
@@ -158,16 +293,19 @@ namespace MandelbrotTest
         {
             Thread.CurrentThread.Priority = ThreadPriority.Lowest;
             MandelbrotContext c = (MandelbrotContext)arg;
-            uint* pBitmap = c.bitmapPtr;
-            double xStep = MandlebrotWidth / (Width * c.multiplier);
-            double yStep = MandlebrotHeight / (Height * c.multiplier);
-            double yreal = c.startLine * yStep + MandlebrotY;
+            int maxmandel = MandelbrotStyle == MandelbrotColorStyle.Paletted ? MandlebrotMaxCount : 512;
+            Color[] paletteCopy = new Color[MandelbrotPalette.Count];
+            MandelbrotPalette.CopyTo(paletteCopy, 0);
+            uint * pBitmap = c.bitmapPtr;
+            double xStep = MandelbrotWidth / (Width * c.multiplier);
+            double yStep = MandelbrotHeight / (Height * c.multiplier);
+            double yreal = c.startLine * yStep + MandelbrotY;
             for (int y = c.startLine; y < c.startLine + c.nrLines; y++)
             {
                 if (mCancelMandelbrot)
                     return;
                 uint* curLine = pBitmap;
-                double xreal = MandlebrotX;
+                double xreal = MandelbrotX;
                 for (int x = 0; x < Width * c.multiplier; x++)
                 {
                     double a = 0;
@@ -180,11 +318,31 @@ namespace MandelbrotTest
                         b = 2 * a_old * b + yreal;
                         count++;
                     }
-                    while (a * a + b * b <= 2 * 2 && count <= 511);
-                    uint r = (uint)(count & 7) * 32;
-                    uint g = (uint)((count >> 3) & 7) * 32;
-                    uint b_ = (uint)((count >> 6) & 7) * 32;
-                    *curLine++ = 0xFF000000u | (r << 16) | (g << 8) | b_;
+                    while (a * a + b * b <= 2 * 2 && count < (maxmandel - 1));
+                    if (MandelbrotStyle == MandelbrotColorStyle.Paletted)
+                    {
+                        int idx = count * (paletteCopy.Length - 1) / maxmandel;
+                        int rem = (count * (paletteCopy.Length - 1) % maxmandel) / (paletteCopy.Length - 1);
+                        Color col = paletteCopy[idx];
+                        if (rem != 0)
+                        {
+                            Color col2 = paletteCopy[idx + 1];
+                            col = Color.FromArgb(
+                                col.R + (col2.R - col.R) * rem / (maxmandel / (paletteCopy.Length - 1)),
+                                col.G + (col2.G - col.G) * rem / (maxmandel / (paletteCopy.Length - 1)),
+                                col.B + (col2.B - col.B) * rem / (maxmandel / (paletteCopy.Length - 1)));
+                        }
+                        *curLine++ = (uint)col.ToArgb();
+                    }
+                    else
+                    {
+                        if (count == 511)
+                            count = 0;
+                        uint r = (uint)(count & 7) * 32;
+                        uint g = (uint)((count >> 3) & 7) * 32;
+                        uint b_ = (uint)((count >> 6) & 7) * 32;
+                        *curLine++ = 0xFF000000u | (r << 16) | (g << 8) | b_;
+                    }
                     xreal += xStep;
                 }
                 //next line (sometimes there is padding at the end, so use the stride and divide by 4, because it's a uint pointer)

@@ -35,6 +35,10 @@ namespace MandelbrotTest
             };
             progressBar.Enabled = true;
             progressBar.Style = ProgressBarStyle.Marquee;
+            cancelButton.Enabled = false;
+            exportButton.Enabled = false;
+            groupBox1.Enabled = false;
+            groupBox2.Enabled = false;
             mg.StartGenerateMandelbrot();
         }
 
