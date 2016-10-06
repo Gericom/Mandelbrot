@@ -8,9 +8,9 @@ namespace MandelbrotTest
 {
     class CoordinateUtilities
     {
+        //Fixes the coords so x1 and y1 are top-left and x2 and y2 are bottom-right
         public static void FixRect(ref double x1, ref double y1, ref double x2, ref double y2)
         {
-
             if ( x1 > x2 )
             {
                 double tmp = x2;
@@ -27,7 +27,6 @@ namespace MandelbrotTest
 
         public static void FixRect(ref int x1, ref int y1, ref int x2, ref int y2)
         {
-
             if ( x1 > x2 )
             {
                 int tmp = x2;

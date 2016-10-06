@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 
 namespace MandelbrotTest
 {
+    //Generic class for animating. It supports all types that support the default math operators
     public class Animator<T>
     {
         public T StartValue { get; private set; }

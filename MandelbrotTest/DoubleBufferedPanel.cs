@@ -7,6 +7,7 @@ using System.Windows.Forms;
 
 namespace MandelbrotTest
 {
+    //Panel that's double buffered
     public class DoubleBufferedPanel : Panel
     {
         public DoubleBufferedPanel()

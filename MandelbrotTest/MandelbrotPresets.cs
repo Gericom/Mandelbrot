@@ -40,6 +40,7 @@ namespace MandelbrotTest
             public double height;
             public int maxCount;
             public MandelbrotGenerator.MandelbrotColorStyle style;
+            //Use int instead of Color, because Color isn't saved in the xml for some reason
             [XmlArrayItem("entry")]
             public int[] palette;
 
@@ -68,6 +69,7 @@ namespace MandelbrotTest
             return (MandelbrotPresets)new XmlSerializer(typeof(MandelbrotPresets)).Deserialize(new StringReader(xml));
         }
 
+        //Uses a XmlSerializer to convert the presets to xml in an easy way
         public String ToXml()
         {
             TextWriter tw = new StringWriter();

@@ -7,6 +7,8 @@ using System.Threading.Tasks;
 
 namespace MandelbrotTest
 {
+    //Implementation of Animator for the rectangle type, because it doesn't support
+    //the math operators
     public class RectangleAnimator : Animator<Rectangle>
     {
         public RectangleAnimator(Rectangle start, Rectangle end, int nrFrames)
