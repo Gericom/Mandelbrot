@@ -96,6 +96,7 @@ namespace MandelbrotTest
         // ---------------
         //Then these coordinates are moved in such a way that the point the mouse
         //pointer points at isn't in the middle, but at the mouse point instead
+        // ↗             ↗
         // ---------------
         //|               |
         //|               |
