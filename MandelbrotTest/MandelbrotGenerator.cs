@@ -30,6 +30,8 @@ namespace MandelbrotTest
             public int nrLines;
             public int stride;
             public int multiplier;
+            public int width;
+            public int height;
         }
 
         //Event that's fired when a mandelbrot picture is ready to be displayed
@@ -207,25 +209,27 @@ namespace MandelbrotTest
             int multiplier = generate2Times ? 2 : 1;
             Bitmap bitmap = new Bitmap(Width * multiplier, Height * multiplier);
             //Lock the bits of the bitmap to access the pixels using a pointer directly
-            BitmapData bitmapData = bitmap.LockBits(new Rectangle(0, 0, Width * multiplier, Height * multiplier), ImageLockMode.WriteOnly, PixelFormat.Format32bppPArgb);
+            BitmapData bitmapData = bitmap.LockBits(new Rectangle(0, 0, bitmap.Width, bitmap.Height), ImageLockMode.WriteOnly, PixelFormat.Format32bppPArgb);
             uint* pBitmap = (uint*)bitmapData.Scan0;
             //start multiple threads for much faster generating
             int nrthreads = 64;
             Task[] tasks = new Task[nrthreads];
             //calculate the number of lines that are calculated by each thread
-            int nrlinesperthread = Height * multiplier / nrthreads;
+            int nrlinesperthread = bitmap.Height / nrthreads;
             int y = 0;
             for (int i = 0; i < nrthreads; i++)
             {
                 //Setup the params for the mandelbrot thread
                 MandelbrotContext c = new MandelbrotContext();
+                c.width = bitmap.Width;
+                c.height = bitmap.Height;
                 c.bitmapPtr = pBitmap;
                 c.startLine = y;
                 //In case of the last thread, make sure all lines left are being calculated,
                 //because nrlinesperthread is always a whole number of lines. When the image
                 //isn't a multiple of nrthreads, a couple of lines wouldn't be calculated otherwise
                 if (i == nrthreads - 1)
-                    c.nrLines = (Height * multiplier) - y;
+                    c.nrLines = bitmap.Height - y;
                 else
                     c.nrLines = nrlinesperthread;
                 c.stride = bitmapData.Stride;
@@ -311,8 +315,8 @@ namespace MandelbrotTest
             Color[] paletteCopy = new Color[MandelbrotPalette.Count];
             MandelbrotPalette.CopyTo(paletteCopy, 0);
             uint* pBitmap = c.bitmapPtr;
-            double xStep = MandelbrotWidth / (Width * c.multiplier);
-            double yStep = MandelbrotHeight / (Height * c.multiplier);
+            double xStep = MandelbrotWidth / c.width;
+            double yStep = MandelbrotHeight / c.height;
             double yreal = c.startLine * yStep + MandelbrotY;
             for (int y = c.startLine; y < c.startLine + c.nrLines; y++)
             {
@@ -321,7 +325,7 @@ namespace MandelbrotTest
                     return;
                 uint* curLine = pBitmap;
                 double xreal = MandelbrotX;
-                for (int x = 0; x < Width * c.multiplier; x++)
+                for (int x = 0; x < c.width; x++)
                 {
                     //calculate the mandelbrot number (count)
                     double a = 0;
