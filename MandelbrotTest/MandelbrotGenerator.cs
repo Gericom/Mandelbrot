@@ -12,7 +12,7 @@ using System.Windows.Forms;
 using System.Drawing.Design;
 using System.Collections.ObjectModel;
 
-namespace MandelbrotTest
+namespace Mandelbrot
 {
     public class MandelbrotGenerator
     {

@@ -1,4 +1,4 @@
-﻿namespace MandelbrotTest
+﻿namespace Mandelbrot
 {
     partial class MandelExporterForm
     {

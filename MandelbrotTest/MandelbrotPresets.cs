@@ -7,7 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Xml.Serialization;
 
-namespace MandelbrotTest
+namespace Mandelbrot
 {
     [XmlRoot("mandelbrot")]
     public class MandelbrotPresets

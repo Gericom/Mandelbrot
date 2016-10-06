@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
-namespace MandelbrotTest
+namespace Mandelbrot
 {
     //Panel that's double buffered
     public class DoubleBufferedPanel : Panel

@@ -9,7 +9,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
-namespace MandelbrotTest
+namespace Mandelbrot
 {
     public partial class MandelExporterForm : Form
     {

@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace MandelbrotTest
+namespace Mandelbrot
 {
     //Implementation of Animator for the rectangle type, because it doesn't support
     //the math operators

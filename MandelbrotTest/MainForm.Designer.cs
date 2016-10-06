@@ -1,4 +1,4 @@
-﻿namespace MandelbrotTest
+﻿namespace Mandelbrot
 {
     partial class MainForm
     {
@@ -30,7 +30,7 @@
         {
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(MainForm));
             this.splitContainer1 = new System.Windows.Forms.SplitContainer();
-            this.panel1 = new MandelbrotTest.DoubleBufferedPanel();
+            this.panel1 = new Mandelbrot.DoubleBufferedPanel();
             this.propertyGrid1 = new System.Windows.Forms.PropertyGrid();
             this.toolStrip1 = new System.Windows.Forms.ToolStrip();
             this.exportToolStripButton = new System.Windows.Forms.ToolStripButton();

@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace MandelbrotTest
+namespace Mandelbrot
 {
     //Generic class for animating. It supports all types that support the default math operators
     public class Animator<T>
