@@ -185,10 +185,13 @@ namespace MandelbrotTest
         //Update the mandelbrot when the size of the panel changed
         private void panel1_SizeChanged(object sender, EventArgs e)
         {
-            mMandelbrotGenerator.Width = panel1.Width;
-            mMandelbrotGenerator.Height = panel1.Height;
-            mMandelbrotGenerator.FixAspect();
-            UpdateMandelbrot();
+            if (mMandelbrotGenerator != null)
+            {
+                mMandelbrotGenerator.Width = panel1.Width;
+                mMandelbrotGenerator.Height = panel1.Height;
+                mMandelbrotGenerator.FixAspect();
+                UpdateMandelbrot();
+            }
         }
 
         private void panel1_MouseDown(object sender, MouseEventArgs e)
