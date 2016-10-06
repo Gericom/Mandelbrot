@@ -14,7 +14,7 @@ using System.IO;
 
 namespace MandelbrotTest
 {
-    public partial class Form1 : Form
+    public partial class MainForm : Form
     {
         MandelbrotGenerator mMandelbrotGenerator;
         Bitmap mMandelbrotBitmap = null;
@@ -26,7 +26,7 @@ namespace MandelbrotTest
 
         bool mWaitingForBrot = false;
 
-        public Form1()
+        public MainForm()
         {
             InitializeComponent();
             mMandelbrotGenerator = new MandelbrotGenerator(Width, Height);
