@@ -162,7 +162,12 @@ namespace MandelbrotTest
             }
             if (mIsMouseDown)
             {
-                e.Graphics.DrawRectangle(Pens.White, mMouseDownPoint.X, mMouseDownPoint.Y, mCurMousePoint.X - mMouseDownPoint.X, mCurMousePoint.Y - mMouseDownPoint.Y);
+                int x1 = mMouseDownPoint.X;
+                int x2 = mCurMousePoint.X;
+                int y1 = mMouseDownPoint.Y;
+                int y2 = mCurMousePoint.Y;
+                CoordinateUtilities.FixRect(ref x1, ref y1, ref x2, ref y2);
+                e.Graphics.DrawRectangle(Pens.White, x1, y1, x2 - x1, y2 - y1);
             }
         }
 
@@ -185,20 +190,9 @@ namespace MandelbrotTest
         {
             if (x1 == x2 || y1 == y2)
                 return;
+            CoordinateUtilities.FixRect(ref x1, ref y1, ref x2, ref y2);
             mMandelbrotGenerator.Crop(x1, y1, x2, y2);
-            if (x1 > x2)
-            {
-                int tmp = x2;
-                x2 = x1;
-                x1 = tmp;
-            }
-            if (y1 > y2)
-            {
-                int tmp = y2;
-                y2 = y1;
-                y1 = tmp;
-            }
-
+         
             mMandlebrotZoomer =
                 new RectangleAnimator(
                     new Rectangle(0, 0, panel1.Width, panel1.Height),

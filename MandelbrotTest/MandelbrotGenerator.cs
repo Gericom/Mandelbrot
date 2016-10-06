@@ -253,19 +253,17 @@ namespace MandelbrotTest
             double xreal_start, yreal_start, xreal_end, yreal_end;
             WindowCoordsToMandlebrot(x1, y1, 1, out xreal_start, out yreal_start);
             WindowCoordsToMandlebrot(x2, y2, 1, out xreal_end, out yreal_end);
-            //make sure the crop won't get flipped 
-            if (xreal_start > xreal_end)
-            {
-                double tmp = xreal_end;
-                xreal_end = xreal_start;
-                xreal_start = tmp;
-            }
-            if (yreal_start > yreal_end)
-            {
-                double tmp = yreal_end;
-                yreal_end = yreal_start;
-                yreal_start = tmp;
-            }
+            //make sure the crop won't get flipped
+            CoordinateUtilities.FixRect(ref xreal_start, ref yreal_start, ref xreal_end, ref yreal_end);
+            if ( xreal_start < -2 )
+                xreal_start = -2;
+            if ( yreal_start < -2 )
+                yreal_start = -2;
+            if ( xreal_end > 2 )
+                xreal_end = 2;
+            if ( yreal_end > 2 )
+                yreal_end = 2;
+
             MandelbrotX = xreal_start;
             MandelbrotY = yreal_start;
             MandelbrotWidth = xreal_end - xreal_start;

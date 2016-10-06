@@ -29,8 +29,12 @@ namespace MandelbrotTest
             {
                 mandelbrot = new Bitmap(mandelbrot, (int)widthUpDown.Value, (int)heightUpDown.Value);
                 mandelbrot.Save(pathTextBox.Text, ImageFormat.Png);
-                progressBar.Style = ProgressBarStyle.Blocks;
-                progressBar.Value = 100;
+                progressBar.Invoke((Action)delegate
+                {
+                    progressBar.Style = ProgressBarStyle.Blocks;
+                    progressBar.Value = 100;
+                });
+
                 DialogResult = DialogResult.OK;
             };
             progressBar.Enabled = true;

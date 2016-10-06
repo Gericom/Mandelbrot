@@ -112,7 +112,7 @@ namespace MandelbrotTest
             });
             result.presets.Add(new MandelbrotPreset()
             {
-                name = "The Eye of Neptune",
+                name = "Neptune's Trident",
                 x = -0.561895714249722,
                 y = -0.64233713371809176,
                 width = 1.185069712557534E-05,
